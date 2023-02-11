@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import Tag, Recipe, Ingridient, RecipeIngridient
+from .models import Tag, Recipe, Ingredient, RecipeIngredient, Favorite
 
 
-class IngridientInlineAdmin(admin.TabularInline):
+class IngredientInlineAdmin(admin.TabularInline):
     model = Recipe.ingredients.through
     min_num = 1
 
@@ -13,15 +13,18 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'author')
     list_filter = ('tags', 'author', 'ingredients',)
-    inlines = (IngridientInlineAdmin,)
+    search_fields = ('name',)
+    inlines = (IngredientInlineAdmin,)
 
 
-class IngridientAdmin(admin.ModelAdmin):
+class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('name',)
 
 
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Ingridient, IngridientAdmin)
-admin.site.register(RecipeIngridient)
+admin.site.register(Ingredient, IngredientAdmin)
+admin.site.register(RecipeIngredient)
+admin.site.register(Favorite)
