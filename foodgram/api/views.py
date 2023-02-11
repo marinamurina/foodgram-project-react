@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from djoser.views import UserViewSet
 from rest_framework.exceptions import ValidationError
 
-from recipes.models import Ingredient, Tag, Recipe, Favorite
+from recipes.models import Ingredient, Tag, Recipe, Favorite, ShoppingСart
 from .permissions import IsAdminOrOwnerOrReadOnly, AdminOrReadOnly
 from users.models import User, Subscription
 from .serializers import (
@@ -58,6 +58,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
             method=request.method,
         )
     
+    @action(
+        detail=True,
+        methods=["POST", "DELETE"],
+        permission_classes=[IsAuthenticated],
+    )
+    def shopping_cart(self, request, pk):
+        """Добавление/удаление покупок в корзину/из корзины"""
+        return self.add_delete_recipe(
+            model=ShoppingСart,
+            pk=pk, 
+            method=request.method,
+        )
+    
     def add_delete_recipe(self, model, pk, method):
         """Общая функция для добавления/удаления рецепта в избранное/в корзину."""
         user = self.request.user
@@ -78,83 +91,50 @@ class RecipeViewSet(viewsets.ModelViewSet):
             
   
 class IngredientViewSet(viewsets.ModelViewSet):
+    """"Отображение ингридиента, списка ингридиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AdminOrReadOnly,)
     
 
 class TagViewSet(viewsets.ModelViewSet):
+    """"Отображение тега, списка тэгов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AdminOrReadOnly,)
 
-
-class SubscriptionViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated, )
-    # serializer_class = SubscriptionCreateSerializer 
-  
-    def get_serializer_class(self):
-        if self.action in ('list','retrieve'):
-            return SubscriptionSerializer
-        return SubscriptionCreateSerializer
     
-    def get_queryset(self):
-        author = get_object_or_404(
-            User, username=self.request.user.username
-        )
-        return author.subscribers.all()
-    
-    # def post(self, request, **kwargs):
-    #     author = get_object_or_404(
-    #         User, id=kwargs.get('user_id')
-    #     )
-    #   if hasattr(request.data, '_mutable'):
-    #        request.data._mutable = True
-    #    request.data.update(
-    #        {'author':author.id, 'subscriber': self.request.user.id} 
-    #    )
-    #    return self.create(request)
-
-
-    # @action(detail=True, methods=('POST', 'DELETE'))
-    def create(self, request, **kwargs):
-        context ={
-            'subscriber': request.user, 
-            'author': get_object_or_404(
-            User, id=kwargs.get('user_id')),
-            'request': request
-        }
-        data = {
-            'subscriber': context['subscriber'].id,
-            'author': context['author'].id
-         }
-        serializer = SubscriptionCreateSerializer(
-            data=data, context=context
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-
-    @action(detail=False,)
-    def subscriptions(self, request):
-        subscriber = request.user
-        queryset = User.objects.filter(subscribers__subscriber=subscriber)
-        pages = self.paginate_queryset(queryset)
-        serializer = SubscriptionSerializer(
-            pages,
-            many=True,
-            context={'request': request}
-        )
-        return self.get_paginated_response(serializer.data)
-
-
-class FavoriteViewSet(viewsets.ModelViewSet):
-    serializer_class = FavoriteSerializer
-    # permission_classes = (IsAuthenticated, )    
-    
-
 class CustomUserViewSet(UserViewSet):
+    """"Отображение пользователей. Подписка и ее удаление"""
     serializer_class = CustomUserSerializer
     queryset = User.objects.all()
     
+    @action(
+        detail=True,
+        methods=["POST", "DELETE"],
+        permission_classes=[IsAuthenticated],
+    )
+    def subscribe(self, request, id):
+        """Создание/удаление подписки на пользователя."""
+        data = {'subscriber': request.user.id, 'author': id}
+        serializer = SubscriptionCreateSerializer(
+            data=data, context={'request': request}
+        )
+        if request.method == "POST":
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        if request.method == 'DELETE':
+            subscription = Subscription.objects.filter(
+                subscriber=request.user, author__id=id
+            )
+            if not subscription.exists():
+                raise ValidationError('Вы не подписаны на этого пользователя.')
+            subscription.delete()
+            return Response(
+                {'Вы отменили подписку на пользователя'},
+                status=status.HTTP_204_NO_CONTENT
+            )

@@ -152,3 +152,33 @@ class Favorite(models.Model):
 
         verbose_name = 'Избранный рецепт' 
         verbose_name_plural = 'Избранные рецепты'
+
+
+class ShoppingСart(models.Model):
+    """Модель корзины."""
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='shopping_card',
+        verbose_name = 'Рецепт'
+        )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shopping_card',
+        verbose_name = 'Пользователь'
+    )
+    
+    def __str__(self):
+        return f'{self.user} добавил "{self.recipe}" в список покупок.'
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'user'],
+                name = 'unique_shopping_cart',
+            )
+        ]
+
+        verbose_name = 'Покупка' 
+        verbose_name_plural = 'Покупки'

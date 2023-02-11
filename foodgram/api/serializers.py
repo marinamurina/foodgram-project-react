@@ -1,6 +1,4 @@
 import base64
-# from drf_base64.fields import Base64ImageField
-# from drf_extra_fields.fields import Base64ImageField
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
@@ -8,7 +6,7 @@ from rest_framework.validators import UniqueValidator, ValidationError, UniqueTo
 from django.shortcuts import get_object_or_404
 
 
-from recipes.models import Favorite, Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.models import Favorite, Ingredient, Recipe, RecipeIngredient, Tag, ShoppingСart
 from users.models import Subscription, User
 
 
@@ -26,6 +24,7 @@ class Base64ImageField(serializers.ImageField):
 
 
 class CustomUserSerializer(UserSerializer):
+    """Cериализатор для работы с пользователями."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -100,7 +99,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(use_url=True, max_length=None)
     
     is_favorited = serializers.SerializerMethodField()
-    # is_in_shopping_card = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
@@ -113,7 +112,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             'image',
             'text',
             'cooking_time',
-            'is_favorited'
+            'is_favorited',
+            'is_in_shopping_cart'
         )
     
     def get_is_favorited(self, obj):
@@ -124,8 +124,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         return is_favorited
     
-    def get_is_in_shopping_card(self, obj):
-        pass
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get('request').user
+        is_favorited = (
+            user.is_authenticated and ShoppingСart.objects.filter(
+            user=user, recipe=obj).exists()
+        )
+        return is_favorited
 
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
@@ -226,52 +231,40 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
-    subscriber = serializers.SlugRelatedField(
-        read_only=True, default=serializers.CurrentUserDefault(),
-        slug_field='id'
-    )
-    author = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='id'
-    )
-    
-    # serializers.PrimaryKeyRelatedField(
-    #    write_only=True,
-    #    queryset=User.objects.all(),
-    #)
-    
-    # def get_author(self, obj):
-    #    request_object = self.context['request']
-    #    author_id = request_object.query_params.get('user_id')
-    #    author = get_object_or_404(
-    #        User, id=author_id)
-    #    return author
-    
-    # serializers.SlugRelatedField(
-    #    queryset=User.objects.all(),
-    #    slug_field='id'
-    # )
-    # CustomUserSerializer(read_only=True)
-    
+    """Сериализатор создания/удаления подписки на пользователя."""
+
+    subscriber = serializers.IntegerField(source="subscriber.id")
+    author = serializers.IntegerField(source="author.id")
+
     class Meta:
         model = Subscription
-        fields = ('subscriber', 'author')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=['author', 'subscriber'],
-                message='Вы уже подписаны на этого юзера!'
-            )
-        ]
+        fields = ["subscriber", "author"]
 
-    def validate_subscriber(self, value):
-        if value == self.context['request'].user:
-            raise serializers.ValidationError(
-                'Нельзя подписаться на самого себя!'
-            )
-        return value
+    def validate(self, data):
+        subscriber = data["subscriber"]["id"]
+        author = data["author"]["id"]
+        if Subscription.objects.filter(
+            subscriber=subscriber,
+            author=author
+        ).exists():
+            raise ValidationError('Вы уже подписаны на этого пользователя.')
+        if subscriber == author:
+            raise ValidationError('Нельзя подписаться на самого себя.')
+        return data
 
-
+    def create(self, validated_data):
+        author = get_object_or_404(
+            User, pk=validated_data["author"]["id"]
+        )
+        subscriber = get_object_or_404(
+            User, pk=validated_data["subscriber"]["id"]
+        )
+        subscription = Subscription.objects.create(
+            author=author, subscriber=subscriber
+        )
+        return subscription
+    
+        
 class FavoriteSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer(
         read_only=True,
