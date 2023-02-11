@@ -46,7 +46,7 @@ class Subscription(models.Model):
                 check = ~Q(subscriber=F('author')), 
                 name = 'subscriber_not_author',
             )
-        ]
+        ]   
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 

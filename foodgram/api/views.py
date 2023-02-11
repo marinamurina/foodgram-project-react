@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from recipes.models import Ingredient, Tag, Recipe, Favorite, ShoppingСart
 from .permissions import IsAdminOrOwnerOrReadOnly, AdminOrReadOnly
 from users.models import User, Subscription
+from .pagination import LimitPagination
 from .serializers import (
     IngredientSerializer,
     RecipeSerializer,
@@ -18,7 +19,8 @@ from .serializers import (
     CustomUserSerializer,
     SubscriptionSerializer,
     FavoriteSerializer,
-    SubscriptionCreateSerializer
+    SubscriptionCreateSerializer,
+    SubscriptionShortSerializer
 )
 
 
@@ -91,23 +93,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
             
   
 class IngredientViewSet(viewsets.ModelViewSet):
-    """"Отображение ингридиента, списка ингридиентов."""
+    """"Отображение ингредиента, списка ингредиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AdminOrReadOnly,)
     
 
 class TagViewSet(viewsets.ModelViewSet):
-    """"Отображение тега, списка тэгов."""
+    """"Отображение тега, списка тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AdminOrReadOnly,)
 
     
 class CustomUserViewSet(UserViewSet):
-    """"Отображение пользователей. Подписка и ее удаление"""
+    """"Отображение пользователей. Подписка и ее отмена."""
     serializer_class = CustomUserSerializer
     queryset = User.objects.all()
+    LimitPagination.page_size = 6
     
     @action(
         detail=True,
@@ -138,3 +141,18 @@ class CustomUserViewSet(UserViewSet):
                 {'Вы отменили подписку на пользователя'},
                 status=status.HTTP_204_NO_CONTENT
             )
+        
+    @action(
+        detail=False,
+        methods=["GET"],
+        permission_classes=[IsAuthenticated],
+    )
+    def subscriptions(self, request):
+        """Просмотр подписок."""
+        subscriptions = User.objects.filter(subscribers__subscriber=self.request.user)
+        paginator = LimitPagination()
+        result_page = paginator.paginate_queryset(subscriptions, request)
+        serializer = SubscriptionSerializer(
+            result_page, many=True, context={"request": request}
+        )
+        return paginator.get_paginated_response(serializer.data)    

@@ -69,7 +69,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Cериализатор для связи ингредиентов с рецептом."""
+    """Cериализатор для связи рецептов с их ингридиентами."""
     id = serializers.IntegerField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name')
     measurement_unit = serializers.CharField(
@@ -215,20 +215,32 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return RecipeSerializer(instance).data
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    subscriber = serializers.SlugRelatedField(
-        read_only=True, default=serializers.CurrentUserDefault(),
-        slug_field='id'
-    )
-    author = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='id'
-    )
-
+class SubscriptionShortSerializer(serializers.ModelSerializer):
+    """Сериализатор отображения рецептов в подписке."""
     class Meta:
-        model = Subscription
-        fields = ('__all__')
+        model = Recipe
+        fields = ("id", "name", "image", "cooking_time")
 
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор отображения подписок."""
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
+       
+    class Meta(CustomUserSerializer.Meta):
+        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        
+    def get_recipes(self, obj):
+        recipes = obj.recipes.all()
+        return SubscriptionShortSerializer(recipes, many=True).data
+
+    def get_recipes_count(self, obj):
+        recipes = Recipe.objects.filter(author=obj)
+        return recipes.count()
+
+    def get_is_subscribed(self, obj):
+        return CustomUserSerializer.get_is_subscribed(self, obj)       
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор создания/удаления подписки на пользователя."""
