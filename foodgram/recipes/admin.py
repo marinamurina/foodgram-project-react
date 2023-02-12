@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Tag, Recipe, Ingredient, RecipeIngredient, Favorite, ShoppingСart
+from .models import (
+    Tag,
+    Recipe,
+    Ingredient,
+    RecipeIngredient,
+    Favorite,
+    ShoppingСart
+)
 
 
 class IngredientInlineAdmin(admin.TabularInline):
@@ -13,7 +20,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author')
+    list_display = ('id', 'name', 'author')
     list_filter = ('tags', 'author', 'ingredients',)
     search_fields = ('name',)
     inlines = (IngredientInlineAdmin,)

@@ -9,7 +9,7 @@ class User(AbstractUser):
     first_name = models.CharField('Имя', max_length=150)
     last_name = models.CharField('Фамилия', max_length=150)
     password = models.CharField('Пароль', max_length=150)
-    
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
@@ -39,14 +39,14 @@ class Subscription(models.Model):
     class Meta:
         constraints = [
             UniqueConstraint(
-            fields = ['subscriber', 'author'],
-            name = 'unique_subscription',
+                fields=['subscriber', 'author'],
+                name='unique_subscription',
             ),
             CheckConstraint(
-                check = ~Q(subscriber=F('author')), 
-                name = 'subscriber_not_author',
+                check=~Q(subscriber=F('author')),
+                name='subscriber_not_author',
             )
-        ]   
+        ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
