@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator 
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import User
 
@@ -10,7 +10,7 @@ class Ingredient(models.Model):
         max_length=100,
         unique=True,
         verbose_name='Имя ингредиента',
-    ) 
+    )
     measurement_unit = models.CharField(
         max_length=20,
         verbose_name='Единицы измерения'
@@ -119,7 +119,7 @@ class RecipeIngredient(models.Model):
                 name='recipe_ingredient',
             )
         ]
-        verbose_name = 'Ингредиент в рецепте' 
+        verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты рецепта'
 
 
@@ -149,7 +149,7 @@ class Favorite(models.Model):
             )
         ]
 
-        verbose_name = 'Избранный рецепт' 
+        verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
 
 
@@ -158,13 +158,13 @@ class ShoppingСart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_card',
+        related_name='shopping_cart',
         verbose_name='Рецепт'
         )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shopping_card',
+        related_name='shopping_cart',
         verbose_name='Пользователь'
     )
 

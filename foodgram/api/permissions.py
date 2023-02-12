@@ -2,10 +2,9 @@ from rest_framework import permissions
 
 
 class IsAdminOrOwnerOrReadOnly(permissions.BasePermission):
-    """Класс для предоставления прав доступа на изменение контента 
+    """Класс для предоставления прав доступа на изменение контента
     для его владельцев и администраторов.
     """
-
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS
@@ -24,7 +23,6 @@ class AdminOrReadOnly(permissions.BasePermission):
     """Класс для органичения прав на создание
     только администраторами.
     """
-
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             return (

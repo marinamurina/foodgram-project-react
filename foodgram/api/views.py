@@ -1,56 +1,48 @@
-from rest_framework import viewsets, status, mixins
-from rest_framework.generics import GenericAPIView
-from rest_framework.decorators import action, api_view, permission_classes
+from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from djoser.views import UserViewSet
-from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingСart, Tag)
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from recipes.models import Ingredient, Tag, Recipe, Favorite, ShoppingСart
-from .permissions import IsAdminOrOwnerOrReadOnly, AdminOrReadOnly
-from users.models import User, Subscription
+from users.models import Subscription, User
 from .pagination import LimitPagination
-from .serializers import (
-    IngredientSerializer,
-    RecipeSerializer,
-    CreateRecipeSerializer,
-    TagSerializer,
-    CustomUserSerializer,
-    SubscriptionSerializer,
-    FavoriteSerializer,
-    SubscriptionCreateSerializer,
-    SubscriptionShortSerializer
-)
+from .permissions import AdminOrReadOnly, IsAdminOrOwnerOrReadOnly
+from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
+                          IngredientSerializer, RecipeSerializer,
+                          SubscriptionCreateSerializer, SubscriptionSerializer,
+                          TagSerializer)
+
+FILENAME = 'shopping_cart.txt'
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Отображение и создание рецептов."""
     queryset = Recipe.objects.all()
+    pagination_class = LimitPagination
 
-    # def get_permissions(self):
-    #    """Определение права доступа для запросов."""
-    #    if self.action in ('create', 'favorite'):
-    #        self.permission_classes = (IsAuthenticated, )
-    #    elif self.action in ('partial_update', 'destroy'):
-    #        self.permission_classes = (IsAdminOrOwnerOrReadOnly, )
-    #    elif self.action in ('list', 'retrieve'):
-    #        self.permission_classes = (AllowAny, )
-    #    return super().get_permissions()
-    #  'shopping_card', 'download_shopping_card'
+    def get_permissions(self):
+        """Определение права доступа для запросов."""
+        if self.action in (
+            'create', 'favorite', 'shopping_card', 'download_shopping_card'
+        ):
+            self.permission_classes = (IsAuthenticated, )
+        elif self.action in ('partial_update', 'destroy'):
+            self.permission_classes = (IsAdminOrOwnerOrReadOnly, )
+        elif self.action in ('list', 'retrieve'):
+            self.permission_classes = (AllowAny, )
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action in ('create', 'partial_update'):
             return CreateRecipeSerializer
         return RecipeSerializer
-
-        # if self.request.method == 'DELETE':
-        #     if object.exists():
-        #         object.delete()
-        #         return Response(status=status.HTTP_204_NO_CONTENT)
-        #    return Response({'error': 'Этого рецепта нет в списке'},
-        #                    status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=True,
@@ -79,7 +71,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     def add_delete_recipe(self, model, pk, method):
-        """Общая функция для добавления/удаления
+        """Вспомогательная функция для добавления/удаления
         рецепта в избранное/в корзину."""
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -99,17 +91,44 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'Рецепт удален.'}, status=status.HTTP_204_NO_CONTENT
             )
 
+    @action(
+        detail=False,
+        methods=['GET'],
+        permission_classes=[IsAuthenticated, ])
+    def download_shopping_cart(self, request):
+        """Формирование списка покупок."""
+        ingredients_to_buy = (
+            RecipeIngredient.objects.filter(
+                recipe__shopping_cart__user=request.user).values(
+                    "ingredient__name",
+                    "ingredient__measurement_unit",
+                ).annotate(total_amount=Sum("amount"))
+        )
+        shopping_cart = []
+        shopping_cart.append(f"Список покупок юзера {request.user.username}\n")
+        for i in ingredients_to_buy:
+            name = i["ingredient__name"]
+            amount = i["total_amount"]
+            measurement_unit = i["ingredient__measurement_unit"]
+            shopping_cart.append(f"{name}, {amount} {measurement_unit}")
+        shopping_list = "\n".join(shopping_cart)
+        response = HttpResponse(
+            shopping_list, content_type="text/plain,charset=utf8"
+        )
+        response['Content-Disposition'] = f'attachment; filename={FILENAME}'
+        return response
+
 
 class IngredientViewSet(viewsets.ModelViewSet):
-    """"Отображение ингредиента, списка ингредиентов."""
+    """Отображение ингредиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AdminOrReadOnly,)
+    permission_classes = (AdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    """"Отображение тега, списка тегов."""
+    """"Отображение тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AdminOrReadOnly,)
@@ -119,7 +138,8 @@ class CustomUserViewSet(UserViewSet):
     """"Отображение пользователей. Подписка и ее отмена."""
     serializer_class = CustomUserSerializer
     queryset = User.objects.all()
-    LimitPagination.page_size = 6
+    pagination_class = LimitPagination
+    # LimitPagination.page_size = 6
 
     @action(
         detail=True,

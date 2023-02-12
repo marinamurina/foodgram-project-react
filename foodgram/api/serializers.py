@@ -1,12 +1,14 @@
 import base64
+
 from django.core.files.base import ContentFile
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
-from rest_framework.validators import ValidationError, UniqueTogetherValidator
-from django.shortcuts import get_object_or_404
-from django.db import transaction
+from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
-from recipes.models import Favorite, Ingredient, Recipe, RecipeIngredient, Tag, ShoppingСart
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingСart, Tag)
 from users.models import Subscription, User
 
 
