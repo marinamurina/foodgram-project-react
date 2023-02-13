@@ -20,11 +20,14 @@ from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
                           SubscriptionCreateSerializer, SubscriptionSerializer,
                           TagSerializer)
 
+
 FILENAME = 'shopping_cart.txt'
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """Отображение и создание рецептов."""
+    """Отображение и создание рецептов.
+    Добавление в избранное, в список покупок.
+    """
     queryset = Recipe.objects.all()
     pagination_class = LimitPagination
     filter_backends = (DjangoFilterBackend,)

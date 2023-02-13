@@ -5,19 +5,19 @@ from .views import (
     IngredientViewSet,
     RecipeViewSet,
     TagViewSet,
-    CustomUserViewSet
+    CustomUserViewSet,
 )
 
 router = routers.DefaultRouter()
 
-router.register(r'ingredients', IngredientViewSet, basename="ingredients")
+router.register(r'ingredients', IngredientViewSet)
 router.register(r'tags', TagViewSet)
-router.register(r'recipes', RecipeViewSet, basename="recipes")
+router.register(r'recipes', RecipeViewSet)
 router.register(r'users', CustomUserViewSet)
 
 
 urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]
