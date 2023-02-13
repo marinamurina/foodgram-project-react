@@ -19,7 +19,7 @@ class IsAdminOrOwnerOrReadOnly(permissions.BasePermission):
             or obj.author == request.user)
 
 
-class AdminOrReadOnly(permissions.BasePermission):
+class IsAdminOrReadOnly(permissions.BasePermission):
     """Класс для органичения прав на создание
     только администраторами.
     """

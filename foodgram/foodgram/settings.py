@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'users',
     'sorl.thumbnail',
     'djoser',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
