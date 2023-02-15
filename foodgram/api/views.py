@@ -71,21 +71,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def add_delete_recipe(self, model, pk, method):
         """Вспомогательная функция для добавления/удаления
-        рецепта в избранное/в корзину."""
+        рецепта в избранное/ корзину."""
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
-        obj = model.objects.filter(user=user, recipe=recipe)
         if method == "POST":
-            if obj.exists():
+            obj = model.objects.get_or_create(user=user, recipe=recipe)
+            if obj[1] is False:
                 raise ValidationError('Рецепт уже был добавлен.')
-            model.objects.create(user=user, recipe=recipe)
             return Response(
                 {'Рецепт добавлен.'}, status=status.HTTP_201_CREATED
             )
         if method == "DELETE":
-            if not obj.exists():
+            obj = model.objects.filter(user=user, recipe=recipe).delete()
+            if obj[0] == 0:
                 raise ValidationError('Рецепт уже был удален/не был добавлен.')
-            obj.delete()
             return Response(
                 {'Рецепт удален.'}, status=status.HTTP_204_NO_CONTENT
             )
@@ -166,9 +165,9 @@ class CustomUserViewSet(UserViewSet):
             subscription = Subscription.objects.filter(
                 subscriber=request.user, author__id=id
             )
-            if not subscription.exists():
+            obj = subscription.delete()
+            if obj[0] == 0:
                 raise ValidationError('Вы не подписаны на этого пользователя.')
-            subscription.delete()
             return Response(
                 {'Вы отменили подписку на пользователя'},
                 status=status.HTTP_204_NO_CONTENT
