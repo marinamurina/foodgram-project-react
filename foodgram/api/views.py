@@ -10,16 +10,15 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
 from users.models import Subscription, User
+
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import LimitPagination
-from .permissions import IsAdminOrReadOnly, IsAdminOrOwnerOrReadOnly
-from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
-                          IngredientSerializer, RecipeSerializer,
-                          SubscriptionCreateSerializer, SubscriptionSerializer,
-                          TagSerializer)
-
+from .permissions import IsAdminOrOwnerOrReadOnly, IsAdminOrReadOnly
+from .serializers import (CreateRecipeSerializer, CustomUserCreateSerializer,
+                          CustomUserSerializer, IngredientSerializer,
+                          RecipeSerializer, SubscriptionCreateSerializer,
+                          SubscriptionSerializer, TagSerializer)
 
 FILENAME = 'shopping_cart.txt'
 
@@ -121,7 +120,6 @@ class IngredientViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
-    pagination_class = LimitPagination
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -133,9 +131,14 @@ class TagViewSet(viewsets.ModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
     """Отображение пользователей. Подписка и ее отмена."""
-    serializer_class = CustomUserSerializer
     queryset = User.objects.all()
     pagination_class = LimitPagination
+
+    def get_serializer_class(self):
+        """Определение класса сериалайзера."""
+        if self.action in ('create', 'partial_update'):
+            return CustomUserCreateSerializer
+        return CustomUserSerializer
 
     def get_permissions(self):
         """Определение права доступа для запросов."""

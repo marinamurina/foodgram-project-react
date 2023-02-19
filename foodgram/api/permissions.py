@@ -15,7 +15,7 @@ class IsAdminOrOwnerOrReadOnly(permissions.BasePermission):
 
         return (
             request.method in permissions.SAFE_METHODS
-            or request.user.is_admin
+            or request.user.is_superuser
             or obj.author == request.user)
 
 
@@ -27,7 +27,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.user.is_authenticated:
             return (
                 request.method in permissions.SAFE_METHODS
-                or request.user.is_admin
+                or request.user.is_superuser
             )
         else:
             return request.method in permissions.SAFE_METHODS

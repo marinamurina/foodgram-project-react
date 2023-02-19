@@ -3,7 +3,7 @@ import base64
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserSerializer
+from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
@@ -25,9 +25,24 @@ class Base64ImageField(serializers.ImageField):
         return value.url
 
 
+class CustomUserCreateSerializer(UserCreateSerializer):
+    """Cериализатор для создания пользователей."""
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password'
+        )
+
+
 class CustomUserSerializer(UserSerializer):
-    """Cериализатор для работы с пользователями."""
-    is_subscribed = serializers.SerializerMethodField()
+    """Cериализатор для отображения пользователей."""
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
@@ -60,7 +75,7 @@ class TagSerializer(serializers.ModelSerializer):
     """Cериализатор для работы с тегами."""
     class Meta:
         model = Tag
-        fields = ('name', 'colour', 'slug')
+        fields = ('id', 'name', 'colour', 'slug')
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
