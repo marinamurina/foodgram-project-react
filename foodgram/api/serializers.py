@@ -185,10 +185,10 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def recipe_ingredients(self, recipe, ingredients):
         recipe_ingredients = [RecipeIngredient(
-                recipe=recipe,
-                ingredient=ingredient.get('ingredient'),
-                amount=ingredient.get('amount')
-            ) for ingredient in ingredients]
+            recipe=recipe,
+            ingredient=ingredient.get('ingredient'),
+            amount=ingredient.get('amount')
+        ) for ingredient in ingredients]
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def to_representation(self, instance):
@@ -203,7 +203,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         source='recipeingredient_set',
         many=True,
         read_only=True
-        )
+    )
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField(use_url=True, max_length=None)
     is_favorited = serializers.SerializerMethodField()
@@ -329,9 +329,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
         )
 
     validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=['recipe', 'user'],
-                message='Вы уже добавили этот рецепт в Избранное!'
-            )
-        ]
+        UniqueTogetherValidator(
+            queryset=Favorite.objects.all(),
+            fields=['recipe', 'user'],
+            message='Вы уже добавили этот рецепт в Избранное!'
+        )
+    ]

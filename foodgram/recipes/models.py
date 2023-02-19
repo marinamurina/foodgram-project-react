@@ -1,6 +1,5 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-
 from users.models import User
 
 
@@ -130,7 +129,7 @@ class Favorite(models.Model):
         on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Рецепт'
-        )
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -160,7 +159,7 @@ class ShoppingСart(models.Model):
         on_delete=models.CASCADE,
         related_name='shopping_cart',
         verbose_name='Рецепт'
-        )
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

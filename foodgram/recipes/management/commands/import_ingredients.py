@@ -16,9 +16,9 @@ class Command(BaseCommand):
             f'{IMPORT_DATA_ADRESS}/ingredients.csv',
             'r', encoding="utf-8-sig"
         ) as csv_file:
-            dataReader = csv.DictReader(csv_file)
+            datareader = csv.DictReader(csv_file)
 
-            for row in dataReader:
+            for row in datareader:
 
                 try:
                     ingredient_name = row['name']
