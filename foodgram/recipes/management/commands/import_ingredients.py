@@ -1,7 +1,7 @@
 import csv
 
-from django.db import IntegrityError
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 from recipes.models import Ingredient
 
 from foodgram.settings import IMPORT_DATA_ADRESS
