@@ -28,4 +28,5 @@
 Примеры запросов можно получить по адресу http://127.0.0.1:8000/redoc/ после запуска проекта
 
 ## Автор
-    Марина Мурина https://github.com/marinamurina
+
+Марина Мурина https://github.com/marinamurina
